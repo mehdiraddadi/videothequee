@@ -6,6 +6,7 @@ use App\Entity\Film;
 use App\Form\FilmType;
 use App\Repository\FilmRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -44,35 +45,52 @@ class FilmManager
      * @param $id
      * @return JsonResponse
      */
-    public function process(Request $request, $id = null, string $action)
+    public function processAddd(Request $request)
     {
         $process = false;
         $film    = new Film();
         if ($request->isMethod('POST')) {
-            if($action !== "add"){
-                $film = $this->repository->find($id);
-                $form = $this->formFactory->create(FormType::class, $film, []);
-                $form->submit($request->request->get($form->getName()));
-                if(!$film) {
-                    $process = false;
-                }
-                $form->handleRequest($request);
+            $form = $this->formFactory->create(FilmType::class, $film, []);
+            $data = json_decode($request->getContent(), true);
 
-                if ($form->isSubmitted() && $form->isValid()) {
-                    $this->em->flush();
-                    $process = true;
-                }
+            $form->submit($data);
+            $form->handleRequest($request);
+
+            if ($form->isSubmitted() && $form->isValid()) {
+                $this->em->persist($film);
+                $this->em->flush();
+                $process = true;
+            } else {
+                throw new Exception(json_encode($this->getErrorMessages($form)));
             }
+        }
+        return $process;
+    }
 
-            if($action === "add"){
-                $form = $this->formFactory->create(FilmType::class, $film, []);
-                $form->handleRequest($request);
-                var_dump($request->request, $request->query);die;
-                if ($form->isSubmitted() && $form->isValid()) {
-                    $this->em->persist($film);
-                    $this->em->flush();
-                    $process = true;
-                }
+    /**
+     * @param Request $request
+     * @param int $id
+     * @return bool
+     */
+    public function processEdit(Request $request, int $id)
+    {
+        $process = false;
+        $film = $this->repository->find($id);
+        if(!$film) {
+            $process = false;
+        }
+        if ($request->isMethod('POST')) {
+            $form = $this->formFactory->create(FormType::class, $film, []);
+            $data = json_decode($request->getContent(), true);
+
+            $form->submit($data);
+            $form->handleRequest($request, $form->getData());
+
+            if ($form->isSubmitted() && $form->isValid()) {
+                $this->em->flush();
+                $process = true;
+            } else {
+                throw new Exception(json_encode($this->getErrorMessages($form)));
             }
         }
         return $process;
@@ -82,7 +100,7 @@ class FilmManager
      * @param $id
      * @return array
      */
-    public function delete($id)
+    public function processDelete(int $id)
     {
         $response = ["message" => "film deleted!", "code" => 204];
         $film = $this->repository->find($id);
@@ -95,6 +113,10 @@ class FilmManager
         return $response;
     }
 
+    /**
+     * @param \Symfony\Component\Form\Form $form
+     * @return array
+     */
     private function getErrorMessages(\Symfony\Component\Form\Form $form) {
         $errors = array();
 

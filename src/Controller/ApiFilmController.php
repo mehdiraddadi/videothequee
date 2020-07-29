@@ -1,8 +1,6 @@
 <?php
 namespace App\Controller;
 
-use App\Entity\Film;
-use App\Form\FilmType;
 use App\Manager\FilmManager;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -46,15 +44,11 @@ Class ApiFilmController extends AbstractController
      */
     public function index(Request $request):Response
     {
-        $film = new Film();
-        $form = $this->createForm(FilmType::class, $film, array(
-            'method' => 'post'
-        ));
         $page  = $request->query->get('page', 1);
         $limit = 5;
 
         $films = $this->repository->findAllFilm($page, $limit);
-        dump($films);die;
+
         return new JsonResponse($this->serializer->serialize($films, 'json'));
     }
 
@@ -78,7 +72,7 @@ Class ApiFilmController extends AbstractController
      */
     public function editFilm(Request $request, int $id):Response
     {
-        $process = $this->manager->process($request, $id, 'edit');
+        $process = $this->manager->processEdit($request, $id);
         if(!$process) {
             return new JsonResponse(["message" => "Error in modification of film", "code" => 500]);
         }
@@ -92,7 +86,7 @@ Class ApiFilmController extends AbstractController
      */
     public function deleteFilm(int $id):Response
     {
-        $response = $this->manager->delete($id);
+        $response = $this->manager->processDelete($id);
 
         return new JsonResponse($response);
     }
@@ -103,7 +97,7 @@ Class ApiFilmController extends AbstractController
      */
     public function newFilm(Request $request):Response
     {
-        $process = $this->manager->process($request, null, 'add');
+        $process = $this->manager->processAddd($request);
         if(!$process) {
             return new JsonResponse(["message" => "Error in add action of film", "code" => 500]);
         }

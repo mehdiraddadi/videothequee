@@ -5,6 +5,7 @@ namespace App\Form;
 use App\Entity\Film;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\Util\StringUtil;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -18,6 +19,7 @@ class FilmType extends AbstractType
             ->add('description')
             ->add('categoryFilm')
             ->add('image')
+            ->add('save',SubmitType::class)
         ;
     }
 
